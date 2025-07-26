@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AlyaFile1Bot Verification</title>
+  <style>
+    body {
+      background-color: black;
+      font-family: 'Segoe UI', sans-serif;
+      color: yellow;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+      padding: 20px;
+      user-select: none;         /* Disable text selection */
+    }
+
+    h1 {
+      color: #FFD700;
+      margin-bottom: 20px;
+    }
+
+    .button {
+      background: linear-gradient(to right, #b8860b, #daa520);
+      border: none;
+      color: white;
+      padding: 15px 30px;
+      margin: 10px;
+      font-size: 1em;
+      font-weight: bold;
+      border-radius: 30px;
+      cursor: pointer;
+      width: 250px;
+      transition: 0.3s;
+    }
+
+    .button:hover {
+      opacity: 0.9;
+      transform: scale(1.05);
+    }
+
+    .footer {
+      margin-top: 40px;
+      font-size: 0.9em;
+      color: #aaa;
+    }
+  </style>
+
+  <!-- Disable right-click, copy, cut, inspect -->
+  <script>
+    document.addEventListener('contextmenu', e => e.preventDefault()); // Disable right click
+    document.addEventListener('keydown', function (e) {
+      if ((e.ctrlKey && e.key === 'u') || // Ctrl+U
+          (e.ctrlKey && e.key === 'c') || // Ctrl+C
+          (e.ctrlKey && e.key === 'x') || // Ctrl+X
+          (e.ctrlKey && e.shiftKey && e.key === 'I') || // Ctrl+Shift+I (DevTools)
+          (e.key === 'F12')) { // F12
+        e.preventDefault();
+        alert("Copying/Inspecting is disabled 🔒");
+      }
+    });
+  </script>
+</head>
+<body>
+
+  <h1>Verify to Use<br>@AlyaFile1Bot</h1>
+  <p>Please verify yourself to access premium content.</p>
+
+  <button class="button" onclick="verifyUser()">Verify Now</button>
+
+  <div class="footer">
+    Powered by @AlyaFile1Bot<br>
+    © 2025 All Rights Reserved
+  </div>
+
+  <script>
+    async function verifyUser() {
+      const apiKey = "YOUR_API_KEY"; // 🔁 Replace with your real key
+      const longUrl = "https://t.me/AlyaFile1Bot"; // 🔁 Replace with your bot or file URL
+      const apiUrl = `https://exe.io/api?api=${apiKey}&url=${encodeURIComponent(longUrl)}`;
+
+      try {
+        const res = await fetch(apiUrl);
+        const data = await res.json();
+
+        if (data.shortenedUrl) {
+          window.location.href = data.shortenedUrl;
+        } else {
+          alert("Failed to create shortlink.");
+        }
+      } catch (err) {
+        alert("API Error");
+        console.error(err);
+      }
+    }
+  </script>
+
+</body>
+</html>
