@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkSnap | Professional URL Shortener</title>
+    
+    <!-- PWA Settings -->
+    <meta name="theme-color" content="#6366f1">
+    <link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIkxpbmtTbmFwIiwKICAic2hvcnRfbmFtZSI6ICJMaW5rU25hcCIsCiAgInN0YXJ0X3VybCI6ICIvIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZmZmZmZmIiwKICAidGhlbWVfY29sb3IiOiAiIzYzNjZmMSIsCiAgImljb25zIjogW3sKICAgICJzcmMiOiAiaHR0cHM6Ly9jZG4tYWljb25zLmVzcHJlc3NvLmxpdmUvMTA2L2ljb25fMjU2LnBuZyIsCiAgICAic2l6ZXMiOiAiMTkyeDE5MiIsCiAgICAidHlwZSI6ICJpbWFnZS9wbmciCiAgfV0KfQ==">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Confetti JS -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Outfit', 'sans-serif'] },
+                    colors: { 
+                        brand: { 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' },
+                        dark: { 800: '#1e293b', 900: '#0f172a' }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { transition: background-color 0.3s, color 0.3s; }
+        .bg-pattern-light {
+            background-color: #f3f4f6;
+            background-image: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                              radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.15) 0px, transparent 50%);
+            backgr
+
+ound-attachment: fixed;
+        }
+        .bg-pattern-dark {
+            background-color: #0f172a;
+            background-image: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
+                              radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.1) 0px, transparent 50%);
+            background-attachment: fixed;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .dark .glass-panel {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .loader {
+            border: 3px solid rgba(255,255,255,0.3); border-top: 3px solid white;
+            border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Modal & Popup Styles */
+        .modal { transition: all 0.3s ease-out; }
+        .modal-content { transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); transform: scale(0.9); opacity: 0; }
+        .modal.active { opacity: 1; visibility: visible; }
+        .modal.active .modal-content { transform: scale(1); opacity: 1; }
+        #copyPopup { z-index: 9999; }
+    </style>
+</head>
+<body class="bg-pattern-light text-gray-800 dark:text-gray-100 flex flex-col min-h-screen">
+
+    <!-- Navbar -->
+    <nav class="container mx-auto px-6 py-6 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <div class="bg-gradient-to-tr from-brand-600 to-purple-600 text-white p-2.5 rounded-xl shadow-lg shadow-brand-500/30">
+                <i class="fa-solid fa-bolt text-xl"></i>
+            </div>
+            <span class="text-2xl font-bold tracking-tight">Link<span class="text-brand-600 dark:text-brand-500">Snap</span></span>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <button id="installAppBtn" class="hidden md:flex items-center gap-2 text-sm font-medium text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/30 px-4 py-2 rounded-full hover:bg-brand-100 transition">
+                <i class="fa-solid fa-download"></i> Install App
+            </button>
+            <button onclick="toggleModal('contactModal')" class="hidden md:block text-sm font-medium hover:text-brand-600 dark:hover:text-brand-400">Contact</button>
+            <button onclick="toggleTheme()" class="w-10 h-10 rounded-full bg-white dark:bg-dark-800 shadow-md flex items-center justify-center text-gray-600 dark:text-yellow-400 transition hover:scale-110">
+                <i class="fa-solid fa-moon dark:hidden"></i>
+                <i class="fa-solid fa-sun hidden dark:block"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-6 py-8 md:py-12">
+        
+        <!-- Hero Section -->
+        <div class="text-center max-w-3xl mx-auto mb-10 fade-in-up">
+            <h1 class="text-4xl md:text-6xl font-extrabold mb-6 leading-tight">
+                Shorten Links <br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-purple-600">In Seconds</span>
+            </h1>
+            <p class="text-gray-500 dark:text-gray-400 text-lg mb-8 max-w-2xl mx-auto">
+                Paste your long URL below and get a shareable link with a downloadable QR code instantly.
+            </p>
+
+            <!-- Input Box -->
+            <div class="glass-panel p-2 rounded-2xl shadow-2xl shadow-brand-900/10 flex flex-col md:flex-row gap-2 relative z-20">
+                <div class="flex-1 relative group">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i class="fa-solid fa-link text-gray-400 group-focus-within:text-brand-600 transition"></i>
+                    </div>
+                    <input type="url" id="longUrl" class="w-full pl-11 pr-4 py-4 rounded-xl bg-gray-50 dark:bg-dark-800 border-none focus:ring-2 focus:ring-brand-500/50 transition text-gray-700 dark:text-gray-200 font-medium placeholder-gray-400" placeholder="Paste long URL here...">
+                </div>
+                <button onclick="shortenUrl()" id="shortenBtn" class="bg-gray-900 dark:bg-brand-600 hover:bg-gray-800 dark:hover:bg-brand-700 text-white px-8 py-4 rounded-xl font-bold transition shadow-lg shadow-brand-500/20 flex items-center justify-center gap-2 min-w-[160px]">
+                    <span id="btnText">Shorten <i class="fa-solid fa-magic ml-1"></i></span>
+                    <div id="loader" class="loader hidden"></div>
+                </button>
+            </div>
+        </div>
+
+        <!-- 📢 ADS SECTION 1 (ADS এখানে বসাবেন) -->
+        <div class="max-w-3xl mx-auto mb-12 fade-in-up delay-100">
+            <div class="w-full h-24 bg-white dark:bg-dark-800 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl flex flex-col items-center justify-center overflow-hidden relative">
+                
+                <!-- 👇👇 PLACE GOOGLE ADSENSE CODE HERE 👇👇 -->
+                <span class="text-xs font-bold text-gray-400 tracking-widest mb-1">SPONSORED ADVERTISEMENT</span>
+                <span class="text-gray-300 dark:text-gray-600 text-sm">Place Ad Code Here</span>
+                <!-- 👆👆 PLACE GOOGLE ADSENSE CODE HERE 👆👆 -->
+
+            </div>
+        </div>
+
+        <!-- Result Section (Hidden) -->
+        <div id="resultSection" class="hidden max-w-2xl mx-auto fade-in-up mb-12">
+            <div class="bg-white dark:bg-dark-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-6 md:p-8 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-500 to-purple-500"></div>
+                
+                <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Success! Here is your link:</h3>
+                
+                <div class="flex flex-col md:flex-row gap-6 items-start">
+                    <div class="flex-1 w-full">
+                        <div class="flex items-center gap-2 bg-gray-50 dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-700 mb-4">
+                            <!-- Link Display -->
+                            <a href="#" id="shortLinkDisplay" target="_blank" class="text-brand-600 dark:text-brand-400 font-bold text-xl truncate flex-1 hover:underline"></a>
+                            
+                            <!-- COPY BUTTON (Triggers Popup) -->
+                            <button onclick="copyCurrentLink()" class="bg-gray-900 dark:bg-brand-600 text-white px-4 py-2 rounded-lg font-bold hover:scale-105 transition shadow-lg flex items-center gap-2">
+                                <i class="fa-regular fa-copy"></i> Copy
+                            </button>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="shareLink('whatsapp')" class="flex-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 py-2 rounded-lg font-medium hover:bg-green-200 transition text-sm"><i class="fa-brands fa-whatsapp mr-1"></i> WhatsApp</button>
+                            <button onclick="shareLink('twitter')" class="flex-1 bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 py-2 rounded-lg font-medium hover:bg-sky-200 transition text-sm"><i class="fa-brands fa-twitter mr-1"></i> Tweet</button>
+                        </div>
+                    </div>
+
+                    <!-- QR Section -->
+                    <div class="flex flex-col gap-2 items-center">
+                        <div class="bg-white p-3 rounded-xl shadow-md border border-gray-100">
+                            <img id="qrImage" src="" alt="QR" class="w-28 h-28 object-contain rounded-lg">
+                        </div>
+                        <button onclick="downloadQR()" class="text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline flex items-center gap-1">
+                            <i class="fa-solid fa-download"></i> Download PNG
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Section -->
+        <div class="max-w-4xl mx-auto mb-12">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-brand-500"></i> History</h2>
+                <button onclick="clearHistory()" class="text-xs text-red-500 hover:underline">CLEAR ALL</button>
+            </div>
+            <div class="bg-white dark:bg-dark-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div id="historyList" class="divide-y divide-gray-100 dark:divide-gray-700">
+                    <div class="p-8 text-center text-gray-400" id="emptyMsg">
+                        <p class="text-sm">No recent links.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAQ Section -->
+        <div class="max-w-3xl mx-auto mb-16">
+            <h2 class="text-xl font-bold text-center mb-6">Frequently Asked Questions</h2>
+            <div class="space-y-3">
+                <details class="group bg-white dark:bg-dark-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 cursor-pointer">
+                    <summary class="flex items-center justify-between font-medium text-sm">
+                        <span>Is it free?</span> <i class="fa-solid fa-chevron-down text-gray-400 group-open:rotate-180 transition"></i>
+                    </summary>
+                    <p class="mt-3 text-gray-500 dark:text-gray-400 text-sm">Yes, totally free forever.</p>
+                </details>
+                <details class="group bg-white dark:bg-dark-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 cursor-pointer">
+                    <summary class="flex items-center justify-between font-medium text-sm">
+                        <span>Do links expire?</span> <i class="fa-solid fa-chevron-down text-gray-400 group-open:rotate-180 transition"></i>
+                    </summary>
+                    <p class="mt-3 text-gray-500 dark:text-gray-400 text-sm">No, our links are permanent.</p>
+                </details>
+            </div>
+        </div>
+
+        <!-- 📢 ADS SECTION 2 (ADS এখানে বসাবেন) -->
+        <div class="container mx-auto px-6 mb-8">
+            <div class="w-full h-24 bg-white dark:bg-dark-800 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl flex items-center justify-center">
+                
+                <!-- 👇👇 PLACE GOOGLE ADSENSE CODE HERE 👇👇 -->
+                <span class="text-xs font-bold text-gray-400 tracking-widest">BOTTOM AD SPACE</span>
+                <!-- 👆👆 PLACE GOOGLE ADSENSE CODE HERE 👆👆 -->
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-dark-800 border-t border-gray-200 dark:border-gray-700 py-8 text-center">
+        <div class="flex justify-center gap-6 mb-4">
+            <button onclick="toggleModal('contactModal')" class="text-gray-400 hover:text-brand-600 text-sm">Contact</button>
+            <a href="#" class="text-gray-400 hover:text-brand-600 text-sm">Terms</a>
+            <a href="#" class="text-gray-400 hover:text-brand-600 text-sm">Privacy</a>
+        </div>
+        <p class="text-gray-500 dark:text-gray-600 text-xs">© 2026 LinkSnap. All rights reserved.</p>
+    </footer>
+
+    <!-- Contact Modal -->
+    <div id="contactModal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black/60 invisible opacity-0 px-4">
+        <div class="modal-content bg-white dark:bg-dark-800 w-full max-w-md p-6 rounded-2xl shadow-2xl relative">
+            <button onclick="toggleModal('contactModal')" class="absolute top-4 right-4 text-gray-400 hover:text-red-500"><i class="fa-solid fa-times text-xl"></i></button>
+            <h2 class="text-2xl font-bold mb-4">Contact Us</h2>
+            <form onsubmit="handleContact(event)" class="space-y-4">
+                <input type="text" placeholder="Your Name" required class="w-full px-4 py-2 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                <textarea rows="3" placeholder="Message" required class="w-full px-4 py-2 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500"></textarea>
+                <button type="submit" class="w-full bg-brand-600 text-white py-2 rounded-lg font-bold hover:bg-brand-700">Send</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ✅ COPY SUCCESS POPUP -->
+    <div id="copyPopup" class="modal fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm invisible opacity-0 px-4">
+        <div class="modal-content bg-white dark:bg-gray-800 w-full max-w-sm p-8 rounded-3xl shadow-2xl text-center relative border border-gray-100 dark:border-gray-700">
+            <div class="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fa-solid fa-check text-4xl text-green-500"></i>
+            </div>
+            <h2 class="text-2xl font-bold mb-2 text-gray-800 dark:text-white">Copied!</h2>
+            <p class="text-gray-500 dark:text-gray-400 mb-6 text-sm">Link copied to clipboard successfully.</p>
+            <button onclick="closeCopyPopup()" class="w-full bg-gray-900 dark:bg-brand-600 text-white py-3 rounded-xl font-bold hover:scale-[1.02] transition shadow-lg">OK</button>
+        </div>
+    </div>
+
+    <!-- Toast (Backup) -->
+    <div id="toast" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 transition-all duration-300 opacity-0 translate-y-10 z-[60] pointer-events-none">
+        <i class="fa-solid fa-circle-check text-green-400"></i> <span id="toastMsg" class="font-medium text-sm">Done</span>
+    </div>
+
+    <script>
+        // --- Theme Logic ---
+        function toggleTheme() {
+            const html = document.documentElement;
+            const body = document.body;
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                body.classList.replace('bg-pattern-dark', 'bg-pattern-light');
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.classList.add('dark');
+                body.classList.replace('bg-pattern-light', 'bg-pattern-dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            document.body.classList.replace('bg-pattern-light', 'bg-pattern-dark');
+        }
+
+        // --- Elements ---
+        const longUrlInput = document.getElementById('longUrl');
+        const shortenBtn = document.getElementById('shortenBtn');
+        const btnText = document.getElementById('btnText');
+        const loader = document.getElementById('loader');
+        const resultSection = document.getElementById('resultSection');
+        const shortLinkDisplay = document.getElementById('shortLinkDisplay');
+        const qrImage = document.getElementById('qrImage');
+        const historyList = document.getElementById('historyList');
+        const emptyMsg = document.getElementById('emptyMsg');
+
+        // --- Load History ---
+        let linkHistory = JSON.parse(localStorage.getItem('linkSnapHistory')) || [];
+        renderHistory();
+
+        // ----------------------------------------------------
+        // 🔧 API CONFIGURATION (API এখানে বসাবেন)
+        // ----------------------------------------------------
+        async function shortenUrl() {
+            let url = longUrlInput.value.trim();
+            if (!url) { showToast('Please paste a URL', 'error'); return; }
+            if (!/^https?:\/\//i.test(url)) url = 'http://' + url;
+
+            setLoading(true);
+
+            try {
+                // 👇👇👇 API LINK CHANGE HERE 👇👇👇
+               
+                const apiUrl = `https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`;
+
+
+                // 👆👆👆 API LINK CHANGE HERE 👆👆👆
+
+                const response = await fetch(apiUrl);
+                
+                if (response.ok) {
+                    const shortUrl = await response.text();
+                    if (shortUrl === "Error" || shortUrl.length > 50) {
+                        showToast('Invalid URL or Network Error', 'error');
+                    } else {
+                        displayResult(url, shortUrl);
+                        triggerConfetti();
+                        longUrlInput.value = "";
+                    }
+                } else {
+                    showToast('Server Error', 'error');
+                }
+            } catch (error) {
+                showToast('Network Connection Error', 'error');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        function displayResult(original, short) {
+            resultSection.classList.remove('hidden');
+            shortLinkDisplay.href = short;
+            shortLinkDisplay.textContent = short;
+            qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${short}&bgcolor=ffffff`;
+            addToHistory(original, short);
+            resultSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // --- Features ---
+        function triggerConfetti() {
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        }
+
+        async function downloadQR() {
+            try {
+                const blob = await fetch(qrImage.src).then(r => r.blob());
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'qrcode.png';
+                link.click();
+            } catch(e) { showToast('Download Failed', 'error'); }
+        }
+
+        function addToHistory(original, short) {
+            linkHistory.unshift({ original, short, date: new Date().toLocaleDateString() });
+            if(linkHistory.length > 5) linkHistory.pop();
+            localStorage.setItem('linkSnapHistory', JSON.stringify(linkHistory));
+            renderHistory();
+        }
+
+        function renderHistory() {
+            historyList.innerHTML = '';
+            if (linkHistory.length === 0) {
+                emptyMsg.style.display = 'block'; historyList.appendChild(emptyMsg); return;
+            }
+            emptyMsg.style.display = 'none';
+            linkHistory.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition';
+                div.innerHTML = `
+                    <div class="overflow-hidden mr-3">
+                        <a href="${item.short}" target="_blank" class="text-brand-600 dark:text-brand-400 font-bold block">${item.short}</a>
+                        <p class="text-xs text-gray-400 truncate">${item.original}</p>
+                    </div>
+                    <button onclick="copyText('${item.short}')" class="text-xs border px-3 py-1.5 rounded bg-white dark:bg-gray-600 hover:bg-gray-100 transition flex items-center gap-1">
+                        <i class="fa-regular fa-copy"></i> Copy
+                    </button>
+                `;
+                historyList.appendChild(div);
+            });
+        }
+
+        function clearHistory() {
+            if(confirm('Clear all?')) {
+                linkHistory = []; localStorage.removeItem('linkSnapHistory'); renderHistory();
+            }
+        }
+
+        // --- ROBUST COPY FUNCTION WITH POPUP ---
+        function copyCurrentLink() {
+            copyText(shortLinkDisplay.textContent);
+        }
+
+        function copyText(text) {
+            // Modern & Fallback Copy Method
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => {
+                    openCopyPopup();
+                }).catch(() => {
+                    fallbackCopy(text);
+                });
+            } else {
+                fallbackCopy(text);
+            }
+        }
+
+        function fallbackCopy(text) {
+            let textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                openCopyPopup(); 
+            } catch (err) {
+                showToast('Unable to copy', 'error');
+            }
+            document.body.removeChild(textArea);
+        }
+
+        // Popup Controls
+        function openCopyPopup() {
+            const popup = document.getElementById('copyPopup');
+            popup.classList.remove('invisible', 'opacity-0');
+            popup.classList.add('active');
+        }
+
+        function closeCopyPopup() {
+            const popup = document.getElementById('copyPopup');
+            popup.classList.remove('active');
+            popup.classList.add('invisible', 'opacity-0');
+        }
+
+        function shareLink(platform) {
+            const url = shortLinkDisplay.textContent;
+            const link = platform === 'whatsapp' ? `https://api.whatsapp.com/send?text=${encodeURIComponent(url)}` : `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}`;
+            window.open(link, '_blank');
+        }
+        function setLoading(state) {
+            if (state) { btnText.classList.add('hidden'); loader.classList.remove('hidden'); shortenBtn.disabled = true; } 
+            else { btnText.classList.remove('hidden'); loader.classList.add('hidden'); shortenBtn.disabled = false; }
+        }
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').textContent = msg;
+            toast.className = `fixed bottom-10 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 transition-all duration-300 opacity-0 translate-y-10 z-[60] pointer-events-none ${type === 'error' ? 'bg-red-600 text-white' : 'bg-gray-900 text-white'}`;
+            toast.classList.remove('opacity-0', 'translate-y-10');
+            setTimeout(() => toast.classList.add('opacity-0', 'translate-y-10'), 3000);
+        }
+        function toggleModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.toggle('active');
+            modal.classList.toggle('invisible');
+            modal.classList.toggle('opacity-0');
+        }
+        function handleContact(e) { e.preventDefault(); toggleModal('contactModal'); showToast('Message Sent!'); }
+        
+        // PWA Install
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault(); deferredPrompt = e;
+            const btn = document.getElementById('installAppBtn'); btn.classList.remove('hidden');
+            btn.addEventListener('click', () => {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((r) => { if(r.outcome === 'accepted') btn.classList.add('hidden'); deferredPrompt = null; });
+            });
+        });
+    </script>
+</body>
+</html>
